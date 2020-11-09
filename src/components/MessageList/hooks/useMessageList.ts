@@ -62,17 +62,16 @@ export const useMessageList = <
     readList,
   );
 
-  return messagesWithDates
-    .map((msg) => ({
-      ...msg,
-      groupStyles:
-        !isDateSeparator<At, Ch, Co, Ev, Me, Re, Us>(msg) && msg.id
-          ? messageGroupStyles[msg.id] || []
-          : [],
-      readBy:
-        !isDateSeparator<At, Ch, Co, Ev, Me, Re, Us>(msg) && msg.id
-          ? readData[msg.id] || []
-          : [],
-    }))
-    .reverse();
+  const finalList = messagesWithDates.map((msg) => ({
+    ...msg,
+    groupStyles:
+      !isDateSeparator<At, Ch, Co, Ev, Me, Re, Us>(msg) && msg.id
+        ? messageGroupStyles[msg.id] || []
+        : [],
+    readBy:
+      !isDateSeparator<At, Ch, Co, Ev, Me, Re, Us>(msg) && msg.id
+        ? readData[msg.id] || []
+        : [],
+  }));
+  return threadList ? finalList : finalList.reverse();
 };
