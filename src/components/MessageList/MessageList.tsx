@@ -5,6 +5,8 @@ import {
   ScrollViewProps,
   TouchableOpacity,
   View,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -12,7 +14,10 @@ import {
   DateSeparatorProps,
   DateSeparator as DefaultDateSeparator,
 } from './DateSeparator';
-import { MessageNotification } from './MessageNotification';
+import {
+  MessageNotification,
+  MessageNotificationProps,
+} from './MessageNotification';
 import {
   MessageSystem as DefaultMessageSystem,
   MessageSystemProps,
@@ -210,6 +215,10 @@ export type MessageListProps<
    * Defaults to and accepts same props as: [TypingIndicator](https://getstream.github.io/stream-chat-react-native/#typingindicator)
    */
   TypingIndicator?: React.ComponentType<TypingIndicatorProps>;
+  NewMessageNotification?: React.ComponentType<MessageNotificationProps>;
+  /** Whether or not the FlatList is inverted. Defaults to true */
+  invertedList?: boolean;
+  onListScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
 };
 
 /**
@@ -249,7 +258,10 @@ export const MessageList = <
     onThreadSelect,
     setFlatListRef,
     threadList,
+    invertedList = true,
     TypingIndicator = DefaultTypingIndicator,
+    NewMessageNotification = MessageNotification,
+    onListScroll,
   } = props;
 
   const {
@@ -273,6 +285,7 @@ export const MessageList = <
   const messageList = useMessageList<At, Ch, Co, Ev, Me, Re, Us>({
     noGroupByUser,
     threadList,
+    invertedList,
   });
 
   const flatListRef = useRef<FlatList<
@@ -359,7 +372,9 @@ export const MessageList = <
     return null;
   };
 
-  const handleScroll: ScrollViewProps['onScroll'] = (event) => {
+  const handleScroll: ScrollViewProps['onScroll'] = (
+    event: NativeSyntheticEvent<NativeScrollEvent>,
+  ) => {
     const y = event.nativeEvent.contentOffset.y;
     const removeNewMessageNotification = y <= 0;
     if (
@@ -375,6 +390,7 @@ export const MessageList = <
     if (removeNewMessageNotification) {
       setNewMessageNotification(false);
     }
+    onListScroll && onListScroll(event);
   };
 
   const goToNewMessages = () => {
@@ -407,10 +423,12 @@ export const MessageList = <
           data={messageList}
           /** Disables the MessageList UI. Which means, message actions, reactions won't work. */
           extraData={disabled}
-          inverted
+          inverted={invertedList}
           keyboardShouldPersistTaps='always'
           keyExtractor={keyExtractor}
-          ListFooterComponent={HeaderComponent}
+          {...(invertedList
+            ? { ListFooterComponent: HeaderComponent }
+            : { ListHeaderComponent: HeaderComponent })}
           maintainVisibleContentPosition={{
             autoscrollToTopThreshold: 10,
             minIndexForVisible: 1,
@@ -433,7 +451,7 @@ export const MessageList = <
           </TypingIndicatorContainer>
         )}
         {newMessagesNotification && (
-          <MessageNotification
+          <NewMessageNotification
             onPress={goToNewMessages}
             showNotification={newMessagesNotification}
           />
